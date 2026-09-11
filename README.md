@@ -1,13 +1,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/CutNow-virtual%20queue-indigo" alt="CutNow">
   <img src="https://img.shields.io/badge/Flask-3.0.0-blue" alt="Flask">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/demo-live%20on%20Railway-success" alt="Live on Railway">
 </p>
 
 <h1 align="center">✂️ CutNow</h1>
 <p align="center">
   <strong>The no-app virtual queue for barber shops &amp; salons.</strong><br>
-  Customers scan a QR, join the line, and get automatic text reminders before their turn.
+  Customers scan a QR, join the line, and get automatic text reminders before their turn — no waiting room, no hovering, no no-shows.
+</p>
+
+<p align="center">
+  <a href="https://cutnow-production.up.railway.app">🚀 Live demo — cutnow-production.up.railway.app</a>
 </p>
 
 ---
@@ -33,7 +37,13 @@ than idle time. CutNow leans into that psychology:
 | 🕶️ **Privacy by design** | The public/customer API never exposes revenue, customer lists, or phone numbers. |
 | ⚡ **Production ready** | SQLite (WAL) with parameterized queries, session auth, rate-limited joins, env-based config. |
 
-## Quick start
+## Try it live
+
+1. Open the demo: **https://cutnow-production.up.railway.app**
+2. Click **Set up your shop** (or log in with a shop code).
+3. Print/grab the QR, scan it as your "customer," join the queue, and watch the status page update in real time.
+
+## Quick start (self-host)
 
 ```bash
 python -m venv venv
@@ -103,6 +113,10 @@ reminders.py    Background worker that sends turn reminders
 qr.py           QR code generation (PNG / SVG)
 templates/      index, dashboard, join, status pages
 static/         Dashboard, join & status JavaScript + styles
-wsgi.py         Yes, that's a waitress WSGI entry point
+wsgi.py         Waitress WSGI entry point
 Procfile        Railway start command
 ```
+
+## License
+
+MIT — build something great with it.
