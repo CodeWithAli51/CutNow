@@ -344,7 +344,11 @@ async function enterDashboard() {
 }
 
 async function refreshData() {
-    const [shopRes, statsRes, qrRes] = await Promise.all([DashAPI.shop(), DashAPI.stats(), DashAPI.qr()]);
+    const [shopRes, statsRes, qrRes] = await Promise.all([
+        DashAPI.shop(),
+        DashAPI.stats(),
+        DashAPI.qr().catch(() => ({ error: true }))
+    ]);
     if (shopRes.error) {
         dashState.view = 'auth';
         renderDash();
