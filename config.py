@@ -13,6 +13,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-change-me")
     DATABASE_PATH = os.environ.get("DATABASE_PATH", os.path.join(BASE_DIR, "cutnow.db"))
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000").rstrip("/")
+    BASE_URL_SET = "BASE_URL" in os.environ
     PORT = int(os.environ.get("PORT", "5000"))
 
     SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "console").lower()

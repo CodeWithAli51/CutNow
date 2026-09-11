@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import wraps
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import qr
 import reminders
@@ -17,6 +18,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("cutnow")
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config.update(
     SECRET_KEY=Config.SECRET_KEY,
     SESSION_COOKIE_HTTPONLY=Config.SESSION_COOKIE_HTTPONLY,
@@ -53,6 +55,12 @@ def owner_required(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def site_base():
+    if Config.BASE_URL_SET:
+        return Config.BASE_URL
+    return request.host_url.rstrip("/")
 
 
 def public_shop(shop):
@@ -201,7 +209,7 @@ def owner_shop():
         "current": snap["current"],
         "waiting": snap["waiting"],
         "est_wait_minutes": snap["est_wait"],
-        "join_url": f"{Config.BASE_URL}/j/{shop['code']}",
+        "join_url": f"{site_base()}/j/{shop['code']}",
     })
 
 
@@ -220,7 +228,7 @@ def owner_sms_log():
 @app.route("/api/owner/qr")
 @owner_required
 def owner_qr():
-    url = f"{Config.BASE_URL}/j/{request.shop['code']}"
+    url = f"{site_base()}/j/{request.shop['code']}"
     fmt = (request.args.get("format") or "png").lower()
     if fmt == "svg":
         return app.response_class(qr.svg_string(url), mimetype="image/svg+xml")
