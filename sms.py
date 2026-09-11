@@ -9,8 +9,6 @@ from config import Config
 
 log = logging.getLogger("cutnow.sms")
 
-FAST2SMS_URL = "https://www.fast2sms.com/dev/bulkV2"
-
 
 class SmsProvider:
     name = "base"
@@ -28,44 +26,47 @@ class ConsoleSmsProvider(SmsProvider):
         return "sent"
 
 
-class Fast2SmsProvider(SmsProvider):
-    name = "fast2sms"
+class AndroidSmsGatewayProvider(SmsProvider):
+    """Send SMS through an Android phone running the open-source SMS Gateway app.
+
+    Phone setup (5 minutes, one-time):
+      1. Install "SMS Gateway" from F-Droid or Google Play on an Android
+         phone that has an active SIM card.
+      2. Open the app → tap "Start" → note the IP and port shown
+         (e.g. http://192.168.1.50:8080).
+      3. Put ANDROID_GATEWAY_URL in your .env:
+         ANDROID_GATEWAY_URL=http://192.168.1.50:8080/v1/sms
+
+    The phone must be on the same WiFi network as the server.
+    """
+
+    name = "android"
 
     def send(self, to, message):
+        url = os.environ.get("ANDROID_GATEWAY_URL", "").rstrip("/")
+        if not url:
+            raise RuntimeError("ANDROID_GATEWAY_URL not set")
+
         digits = re.sub(r"\D", "", to)
         ten_digit = digits[-10:] if len(digits) >= 10 else digits
+        phone = "+91" + ten_digit if len(ten_digit) == 10 and not ten_digit.startswith("+") else ten_digit
 
-        body = {
-            "route": os.environ.get("FAST2SMS_ROUTE", "q"),
+        payload = json.dumps({
+            "phone": phone,
             "message": message,
-            "numbers": ten_digit,
-        }
-        if os.environ.get("FAST2SMS_SENDER_ID"):
-            body["sender_id"] = os.environ.get("FAST2SMS_SENDER_ID")
-        if os.environ.get("FAST2SMS_TEMPLATE_ID"):
-            body["variables_values"] = os.environ.get("FAST2SMS_TEMPLATE_ID")
-
-        payload = json.dumps(body).encode("utf-8")
+        }).encode("utf-8")
 
         req = urllib.request.Request(
-            FAST2SMS_URL,
+            url,
             data=payload,
-            headers={
-                "authorization": os.environ.get("FAST2SMS_API_KEY", ""),
-                "Content-Type": "application/json",
-            },
+            headers={"Content-Type": "application/json"},
             method="POST",
         )
 
         with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
+            body = resp.read().decode("utf-8", errors="replace")
+            log.info("Android Gateway -> %s: HTTP %s", phone, resp.status)
 
-        if result.get("return") is False:
-            err = result.get("message", "unknown error")
-            log.warning("Fast2SMS rejected: %s", err)
-            raise RuntimeError(f"Fast2SMS error: {err}")
-
-        log.info("Fast2SMS sent to %s: %s", ten_digit, result.get("message", "ok"))
         return "sent"
 
 
@@ -84,11 +85,12 @@ class TwilioSmsProvider(SmsProvider):
 def get_provider():
     provider = Config.SMS_PROVIDER
 
-    if provider == "fast2sms":
-        if not os.environ.get("FAST2SMS_API_KEY"):
-            log.warning("FAST2SMS_API_KEY not set — falling back to console")
+    if provider == "android":
+        url = os.environ.get("ANDROID_GATEWAY_URL", "")
+        if not url:
+            log.warning("ANDROID_GATEWAY_URL not set — falling back to console")
             return ConsoleSmsProvider()
-        return Fast2SmsProvider()
+        return AndroidSmsGatewayProvider()
 
     if provider == "twilio":
         if not Config.TWILIO_ACCOUNT_SID or not Config.TWILIO_AUTH_TOKEN:
