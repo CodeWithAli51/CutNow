@@ -20,6 +20,11 @@ class Config:
     TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
     TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 
+    FAST2SMS_API_KEY = os.environ.get("FAST2SMS_API_KEY", "")
+    FAST2SMS_ROUTE = os.environ.get("FAST2SMS_ROUTE", "q")
+    FAST2SMS_SENDER_ID = os.environ.get("FAST2SMS_SENDER_ID", "")
+    FAST2SMS_TEMPLATE_ID = os.environ.get("FAST2SMS_TEMPLATE_ID", "")
+
     REMINDER_ENABLED = os.environ.get("REMINDER_ENABLED", "true").lower() == "true"
     REMINDER_INTERVAL_SECONDS = int(os.environ.get("REMINDER_INTERVAL_SECONDS", "20"))
     REMINDER_NEAR_POSITION = int(os.environ.get("REMINDER_NEAR_POSITION", "3"))
