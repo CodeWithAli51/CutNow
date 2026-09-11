@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CutNow — Scan. Join. Get notified.</title>
+    <meta name="description" content="CutNow is a virtual queue for barber shops and salons. Customers scan a QR, join the line, and get automatic text reminders before their turn.">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-nav">
+        <div class="nav-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">✂️</span>
+                <span class="brand-name">CutNow</span>
+            </a>
+            <nav class="nav-links">
+                <a href="#how">How it works</a>
+                <a href="#why">Why CutNow</a>
+                <a class="btn btn-primary btn-sm" href="/owner">Shop owner login</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-inner">
+            <span class="pill">Scan. Join. Get a text.</span>
+            <h1>No app. No waiting room.<br>Just scan and go.</h1>
+            <p class="hero-sub">
+                Customers scan one QR code at your door, join the line in seconds, and get
+                automatic text reminders before their turn — so they can shop, grab coffee
+                or run errands instead of standing around.
+            </p>
+            <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" href="/owner">Set up your shop</a>
+                <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat"><strong>1 scan</strong><span>to join the queue</span></div>
+                <div class="hero-stat"><strong>Auto SMS</strong><span>when your turn nears</span></div>
+                <div class="hero-stat"><strong>Live ETA</strong><span>no more guessing</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="why" class="section">
+        <div class="section-head">
+            <h2>Why shops and customers love it</h2>
+            <p>Waiting in line is the worst part of a service visit. CutNow deletes it.</p>
+        </div>
+        <div class="cards-3">
+            <article class="feature-card">
+                <div class="feature-icon indigo">📱</div>
+                <h3>Scan to join</h3>
+                <p>One QR code on your door or counter. Customers open it, pick a service and join — no app, no account.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon purple">🔔</div>
+                <h3>Automatic text reminders</h3>
+                <p>When a customer is near the front, CutNow texts them automatically. Fewer no-shows, happier clients.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon green">⏱️</div>
+                <h3>Live position & ETA</h3>
+                <p>Every customer gets a private status link showing their place in line and estimated wait, updated live.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon blue">📈</div>
+                <h3>Keep chairs full</h3>
+                <p>When waiting is painless, fewer people walk away. Track daily revenue, customers served and top services.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon amber">🔒</div>
+                <h3>Private by design</h3>
+                <p>Customers only ever see the shop name, services and their own status — never your revenue or customer list.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon rose">⚙️</div>
+                <h3>Your menu, your prices</h3>
+                <p>Add or remove services and pricing anytime. Your QR and customer form update automatically.</p>
+            </article>
+        </div>
+    </section>
+
+    <section id="how" class="section section-alt">
+        <div class="section-head">
+            <h2>How it works</h2>
+            <p>From scan to served in three steps.</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Print your QR</h3>
+                <p>Create your shop in under a minute. We generate a unique QR code and link for your counter or window.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Customers scan & join</h3>
+                <p>They enter a name and phone, pick a service, and they're in line — with a private live status page.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Serve in order</h3>
+                <p>Your dashboard shows who's next. Tap to start and complete. Customers get a text before their turn.</p>
+            </div>
+        </div>
+        <div class="cta-band">
+            <div>
+                <h3>Ready to clear your waiting room?</h3>
+                <p>Set up your shop in under a minute. It's free to try.</p>
+            </div>
+            <a class="btn btn-primary btn-lg" href="/owner">Get started</a>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <span class="brand-name">CutNow</span>
+        <span class="muted">Less waiting. More customers.</span>
+    </footer>
+</body>
+</html>
