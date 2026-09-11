@@ -12,6 +12,7 @@ const DashAPI = {
     signup: (name, phone) => post('/api/owner/signup', { name, phone }),
     login: (code, pin) => post('/api/owner/login', { code, pin }),
     logout: () => post('/api/owner/logout', {}),
+    recoverPin: (code, phone) => post('/api/public/recover-pin', { code, phone }),
     shop: () => get('/api/owner/shop'),
     stats: () => get('/api/owner/stats'),
     qr: () => get('/api/owner/qr'),
@@ -105,6 +106,23 @@ function renderAuth() {
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Log in</button>
+                    <div class="text-center">
+                        <button onclick="toggleRecoverForm()" class="text-indigo-600 text-sm hover:underline">Forgot your PIN?</button>
+                    </div>
+                    <div id="recoverForm" style="display:none;" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 space-y-3">
+                        <p class="text-sm text-gray-700">We'll text your PIN to the phone number registered with this shop.</p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Shop code</label>
+                            <input type="text" id="recoverCode" placeholder="e.g. 7KQ2MP" style="text-transform:uppercase"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Registered phone</label>
+                            <input type="tel" id="recoverPhone" placeholder="+91 xxxxxxxxxx"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <button onclick="handleRecoverPin()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition">Send PIN by SMS</button>
+                    </div>
                     <div class="text-center mt-4">
                         <button onclick="setAuthMode('signup')" class="text-indigo-600 text-sm hover:underline">New here? Create a shop</button>
                     </div>
@@ -137,6 +155,20 @@ function setAuthMode(mode) {
     renderDash();
 }
 
+function toggleRecoverForm() {
+    const el = document.getElementById('recoverForm');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function handleRecoverPin() {
+    const code = document.getElementById('recoverCode').value.trim();
+    const phone = document.getElementById('recoverPhone').value.trim();
+    if (!code || !phone) return showToast('Enter your shop code and registered phone', 'error');
+    const res = await DashAPI.recoverPin(code, phone);
+    if (res.error) return showToast(res.error, 'error');
+    showToast(res.sent ? 'Your PIN has been sent by SMS.' : 'No match found. Check your shop code and phone.', 'success', 9000);
+}
+
 async function handleSignup() {
     const name = document.getElementById('signupName').value.trim();
     const phone = document.getElementById('signupPhone').value.trim();
@@ -144,7 +176,7 @@ async function handleSignup() {
     const res = await DashAPI.signup(name, phone);
     if (res.error) return showToast(res.error, 'error');
     await enterDashboard();
-    showToast('Shop created! Your PIN is ' + res.pin + ' — save it now.', 'success', 12000);
+    showToast('Shop created! Your PIN is ' + res.pin + (res.sms_sent ? ' — also sent to your phone.' : ' — save it now.'), 'success', 12000);
 }
 
 async function handleLogin() {
@@ -296,6 +328,14 @@ function renderSettings() {
         </div>
         <div class="grid md:grid-cols-2 gap-6">
             <div class="space-y-4">
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <div class="text-sm font-medium text-gray-700">Your login PIN</div>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-3xl font-bold text-gray-800" style="font-family:monospace;letter-spacing:4px;">${esc(shop.pin || '')}</span>
+                        <button onclick="copyText('${esc(shop.pin || '')}', 'PIN copied')" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700">Copy</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Forgot it? Use "Forgot your PIN?" on the login screen — we'll text it to your phone.</p>
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Shop name</label>
                     <input type="text" id="setName" value="${esc(shop.name)}" class="w-full px-4 py-2 border border-gray-300 rounded-lg">

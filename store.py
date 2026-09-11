@@ -50,15 +50,15 @@ def create_shop(name, phone=None):
             if not exists:
                 break
         conn.execute(
-            "INSERT INTO shops (id, code, name, phone, pin_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (shop_id, code, name, phone, generate_password_hash(pin), now_iso()),
+            "INSERT INTO shops (id, code, name, phone, pin_hash, pin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (shop_id, code, name, phone, generate_password_hash(pin), pin, now_iso()),
         )
         for i, (sname, price, duration) in enumerate(DEFAULT_SERVICES):
             conn.execute(
                 "INSERT INTO services (shop_id, name, price, duration, sort_order) VALUES (?, ?, ?, ?, ?)",
                 (shop_id, sname, price, duration, i),
             )
-    return {"id": shop_id, "code": code, "name": name, "pin": pin}
+    return {"id": shop_id, "code": code, "name": name, "phone": phone, "pin": pin}
 
 
 def get_shop_by_code(code):

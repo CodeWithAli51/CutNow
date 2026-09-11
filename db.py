@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS shops (
     name TEXT NOT NULL,
     phone TEXT,
     pin_hash TEXT NOT NULL,
+    pin TEXT,
     reminder_enabled INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL
 );
@@ -82,3 +83,6 @@ def get_connection():
 def init_db():
     with get_connection() as conn:
         conn.executescript(SCHEMA)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(shops)").fetchall()]
+        if "pin" not in cols:
+            conn.execute("ALTER TABLE shops ADD COLUMN pin TEXT")

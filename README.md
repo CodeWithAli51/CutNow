@@ -1,66 +1,108 @@
-# CutNow
+<p align="center">
+  <img src="https://img.shields.io/badge/CutNow-virtual%20queue-indigo" alt="CutNow">
+  <img src="https://img.shields.io/badge/Flask-3.0.0-blue" alt="Flask">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+</p>
 
-A virtual queue for barber shops and salons. Customers **scan a QR code, join the line, and get automatic text reminders** before their turn — no app, no waiting room.
+<h1 align="center">✂️ CutNow</h1>
+<p align="center">
+  <strong>The no-app virtual queue for barber shops &amp; salons.</strong><br>
+  Customers scan a QR, join the line, and get automatic text reminders before their turn.
+</p>
+
+---
 
 ## Why it works
 
-People overestimate how long they've waited by ~36%, and "occupied" time feels shorter than idle time. Showing a live position + ETA, and sending a text when it's nearly their turn, measurably reduces no-shows and keeps customers from walking away.
+People *overestimate* how long they've waited by ~36%, and "occupied time" feels shorter
+than idle time. CutNow leans into that psychology:
+
+- Customers see a **live position + ETA** instead of helplessly hovering.
+- A **text reminder** lands when their turn is near, so they step away and come back on time.
+- Result: **fewer no-shows**, **less crowding**, and customers who rate the experience higher.
 
 ## Features
 
-- **Scan-to-join** — one QR per shop (`/j/<code>`). No shop ID to type.
-- **Automatic SMS reminders** — sent when a customer joins and again when they're near the front.
-- **Live status page** — private per-customer link (`/c/<token>`) with position, ETA and a progress bar.
-- **Owner dashboard** — login with shop code + PIN, live queue, start/complete service, QR download, services & pricing, daily stats.
-- **Privacy by design** — the public/customer API never exposes revenue, customer lists or phone numbers.
-- **Production ready** — SQLite (WAL) with parameterized queries, session auth, rate-limited joins, env-based config.
+| | |
+| --- | --- |
+| 🖨️ **Scan-to-join** | One printed QR per shop (`/j/<code>`). No shop IDs to type, no app to install. |
+| 📱 **Automatic SMS reminders** | Pings customers when they join and again right before their turn. |
+| 🔗 **Private status page** | Per-customer link (`/c/<token>`) with position, ETA, and a progress bar. |
+| 🧑‍💼 **Owner dashboard** | Shop code + PIN login, live queue, start/complete service, daily stats & revenue. |
+| 🔑 **PIN by SMS** | Your shop code and PIN are texted straight to your phone when you sign up — and can be re-sent anytime if you forget. |
+| 🕶️ **Privacy by design** | The public/customer API never exposes revenue, customer lists, or phone numbers. |
+| ⚡ **Production ready** | SQLite (WAL) with parameterized queries, session auth, rate-limited joins, env-based config. |
 
 ## Quick start
 
 ```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate            # Windows       (macOS/Linux: source venv/bin/activate)
 pip install -r requirements.txt
-copy .env.example .env       # then edit SECRET_KEY, BASE_URL
+copy .env.example .env           # Windows       (macOS/Linux: cp .env.example .env)
 python app.py
 ```
 
-Open http://localhost:5000, click **Set up your shop**, and save the PIN shown.
+Open **http://localhost:5000** → click **Set up your shop** → note the shop code + PIN
+(and they're texted to your phone for safekeeping).
 
-With `SMS_PROVIDER=console` (the default), reminder texts are printed to the console/log so you can test without any SMS account. To send real texts, set `SMS_PROVIDER=twilio` and the `TWILIO_*` vars.
+> When you set up a shop, add your phone number — CutNow will **SMS you your shop code
+> and PIN**. Forgot the PIN later? Use **"Forgot your PIN?"** on the login screen.
+> No SMS account needed while testing: with `SMS_PROVIDER=console` texts are printed to the log.
 
 ## Routes
 
 | Path | Purpose |
 | --- | --- |
 | `/` | Landing page |
-| `/owner` | Owner dashboard (login / signup) |
+| `/owner` | Owner dashboard (sign up / log in) |
 | `/j/<code>` | Public scan-to-join page |
 | `/c/<token>` | Private customer status page |
 | `/api/public/...` | Privacy-safe customer API |
 | `/api/owner/...` | Authenticated owner API |
 | `/healthz` | Health check |
 
-## Running in production
+## SMS providers
 
-```bash
-python wsgi.py     # waitserve, multi-threaded
+CutNow ships with three providers — pick one via `SMS_PROVIDER` in `.env`.
+
+| Provider | Cost | How it works |
+| --- | --- | --- |
+| `console` | Free | Prints every text to the log. Perfect for development. |
+| `android` | **Free, open source** | Sends real SMS from your own Android phone (any SIM) with the SMS Gateway app — great for low-volume testing and local use. |
+| `twilio` | Paid | Cloud SMS + WhatsApp — best for production at scale. |
+
+Details and setup for the Android gateway are in [`.env.example`](.env.example).
+
+## Deployment (Railway)
+
+1. Push this repo to GitHub and create a new **Railway** project from the repo.
+2. Railway auto-detects the `Procfile`:
+   ```
+   web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+   ```
+3. Set these **Variables** in Railway:
+   - `SECRET_KEY` — long random string
+   - `BASE_URL` — your `*.up.railway.app` URL
+   - `SMS_PROVIDER=console` to start (switch to `twilio` for real texts)
+   - `SESSION_COOKIE_SECURE=true`
+4. Deploy and open the generated URL.
+
+> **Note:** SQLite works but doesn't persist across Railway restarts. For durable data,
+> add Railway Postgres and point the store layer at it (only `db.py`/`store.py` touch the DB).
+
+## Project structure
+
 ```
-
-Put it behind a reverse proxy (Nginx / Caddy / a cloud load balancer) for TLS. Set `SESSION_COOKIE_SECURE=true` once you're on HTTPS.
-
-### Scaling
-
-The app is written so you can scale out without rewriting:
-
-- **Stateless web tier** — sessions are cookie-based, so you can run multiple instances behind a load balancer.
-- **Shared database** — point `DATABASE_PATH` at a networked volume, or swap `db.py`/`store.py` for PostgreSQL (the store layer is the only thing that talks to the DB).
-- **Single reminder worker** — run the reminder loop in a dedicated process (or a cron hitting an endpoint) rather than in every web worker, so customers aren't texted twice. Set `REMINDER_ENABLED=false` on web instances and run one worker.
-- **Real SMS at volume** — replace the Twilio adapter in `sms.py` with any provider; the interface is one `send(to, message)` method.
-
-## Configuration
-
-All via environment variables / `.env` — see `.env.example`.
-</｜｜DSML｜｜ parameter>
-</｜｜DSML｜｜ invoke>
-</｜｜DSML｜｜ calls>
+app.py          Flask app — all routes (public + owner APIs)
+config.py       Env-based configuration
+db.py           SQLite schema + connection helpers (WAL)
+store.py        Data access layer (the only module that talks to the DB)
+sms.py          SMS providers: console / android / twilio
+reminders.py    Background worker that sends turn reminders
+qr.py           QR code generation (PNG / SVG)
+templates/      index, dashboard, join, status pages
+static/         Dashboard, join & status JavaScript + styles
+wsgi.py         Yes, that's a waitress WSGI entry point
+Procfile        Railway start command
+```

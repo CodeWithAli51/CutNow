@@ -8,6 +8,7 @@ from flask import Flask, jsonify, redirect, render_template, request, session, u
 
 import qr
 import reminders
+import sms
 import store
 from config import Config
 from db import init_db
@@ -67,6 +68,21 @@ def public_shop(shop):
     }
 
 
+def send_sms_to(shop_id, phone, message):
+    provider, status = sms.send_sms(phone, message)
+    store.log_sms(shop_id, None, phone, message, provider, status)
+    return provider, status
+
+
+def owner_credentials_message(shop):
+    return (
+        f"CutNow: your shop '{shop['name']}' is ready!\n"
+        f"Shop code: {shop['code']}\n"
+        f"PIN: {shop['pin']}\n"
+        "Keep these safe — you'll need them to log in."
+    )
+
+
 # ---------- pages ----------
 
 @app.route("/")
@@ -107,7 +123,23 @@ def owner_signup():
     shop = store.create_shop(name, phone or None)
     session["owner_shop_id"] = shop["id"]
     log.info("New shop created code=%s", shop["code"])
-    return jsonify({"success": True, "code": shop["code"], "pin": shop["pin"], "name": shop["name"]})
+    sms_sent = False
+    if shop.get("phone"):
+        message = (
+            f"CutNow: your shop '{shop['name']}' is ready!\n"
+            f"Shop code: {shop['code']}\n"
+            f"PIN: {shop['pin']}\n"
+            "Keep these safe — you'll need them to log in."
+        )
+        provider, status = send_sms_to(shop["id"], shop["phone"], message)
+        sms_sent = status == "sent"
+    return jsonify({
+        "success": True,
+        "code": shop["code"],
+        "pin": shop["pin"],
+        "name": shop["name"],
+        "sms_sent": sms_sent,
+    })
 
 
 @app.route("/api/owner/login", methods=["POST"])
@@ -128,6 +160,30 @@ def owner_logout():
     return jsonify({"success": True})
 
 
+@app.route("/api/public/recover-pin", methods=["POST"])
+def public_recover_pin():
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    phone = (data.get("phone") or "").strip()
+
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+    if rate_limited(f"recover:{ip}", limit=3, window=300):
+        return jsonify({"error": "Too many attempts. Please wait a few minutes."}), 429
+    if not code or not phone:
+        return jsonify({"error": "Please enter your shop code and phone number"}), 400
+
+    shop = store.get_shop_by_code(code)
+    if not shop or not shop.get("phone"):
+        return jsonify({"success": True, "sent": False})
+
+    if sms.normalize_phone(shop["phone"]) != sms.normalize_phone(phone):
+        return jsonify({"success": True, "sent": False})
+
+    provider, status = send_sms_to(shop["id"], phone, owner_credentials_message(shop))
+    log.info("PIN recovery SMS for shop %s (%s)", shop["code"], provider)
+    return jsonify({"success": True, "sent": status == "sent"})
+
+
 # ---------- owner data ----------
 
 @app.route("/api/owner/shop")
@@ -139,6 +195,7 @@ def owner_shop():
         "code": shop["code"],
         "name": shop["name"],
         "phone": shop["phone"],
+        "pin": shop["pin"],
         "reminder_enabled": bool(shop["reminder_enabled"]),
         "services": store.list_services(shop["id"]),
         "current": snap["current"],
